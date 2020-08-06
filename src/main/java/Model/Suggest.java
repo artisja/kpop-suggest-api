@@ -1,4 +1,7 @@
-package Model;
+package java.Model;
+
+import java.Model.Artist;
+import java.Model.Song;
 
 /**
  * Created by artisja on 4/11/20.

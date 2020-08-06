@@ -1,5 +1,6 @@
-package Model;
+package java.Model;
 
+import java.Model.Suggest;
 import java.util.ArrayList;
 
 /**
@@ -7,7 +8,7 @@ import java.util.ArrayList;
  */
 public class Song {
 
-    String name,link;
+    String name,link,songId;
     int length;
     Artist features;
     ArrayList<Suggest> suggests;
