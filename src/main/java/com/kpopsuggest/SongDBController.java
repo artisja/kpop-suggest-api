@@ -5,6 +5,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.PutItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
@@ -36,7 +37,10 @@ public class SongDBController {
         System.out.println(suggestionsTable.getItem(spec));
         List<Song> suggestSongItems = new ArrayList<Song>();
         suggestSongItems.add(song);
-        PutItemOutcome outcome = suggestionsTable.putItem((PutItemSpec) suggestSongItems);
+        Item suggestItem = new Item()
+                .withPrimaryKey("userId", userId)
+                .withList("suggestionList", suggestSongItems);
+        PutItemOutcome outcome = suggestionsTable.putItem(suggestItem);
         return outcome;
     }
 
