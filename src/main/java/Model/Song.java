@@ -1,6 +1,5 @@
-package java.Model;
+package Model;
 
-import java.Model.Suggest;
 import java.util.ArrayList;
 
 /**
