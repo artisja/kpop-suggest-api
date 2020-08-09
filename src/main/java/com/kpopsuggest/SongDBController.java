@@ -29,8 +29,8 @@ public class SongDBController {
     }
 
     //Gets suggestions for User
-    @RequestMapping(value = "/Suggestions/add/{userId}",method = RequestMethod.GET, headers = "Accept=application/json")
-    public PutItemOutcome addSuggestions(@PathVariable("userId") String userId, Song song) {
+    @PostMapping(value = "/Suggestions/add/{userId}", headers = "Accept=application/json")
+    public PutItemOutcome addSuggestions(@PathVariable("userId") String userId,@RequestBody Song song) {
 
         Table suggestionsTable = dynamoDB.getTable("suggestions_table");
         GetItemSpec spec = new GetItemSpec().withPrimaryKey("userId", "zion");
