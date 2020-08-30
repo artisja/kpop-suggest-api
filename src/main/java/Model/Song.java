@@ -3,19 +3,18 @@ package Model;
 import java.util.ArrayList;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 
 /**
  * Created by artisja on 4/11/20.
  */
-@DynamoDBTable(tableName="SongTable")
+@DynamoDBTable(tableName="song_table")
 public class Song {
 
     String name;
     String link;
-    String songId;
+    int songId;
     String artistName;
     int length,likes;
 //    Artist features;
@@ -42,7 +41,7 @@ public class Song {
     public String getArtistName() { return artistName; }
 
     @DynamoDBHashKey(attributeName = "songID")
-    public String getSongId() { return songId; }
+    public int getSongId() { return songId; }
 
     @DynamoDBAttribute(attributeName = "likes")
     public int getLikes() { return likes; }
@@ -76,7 +75,7 @@ public class Song {
 
     public void setArtistName(String artistName) { this.artistName = artistName; }
 
-    public void setSongId(String songId) { this.songId = songId; }
+    public void setSongId(int songId) { this.songId = songId; }
 
     //    public void setFeatures(Artist features) {
 //        this.features = features;

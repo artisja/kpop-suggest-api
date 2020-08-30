@@ -4,10 +4,8 @@ import Model.Song;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.PutItemOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import org.springframework.web.bind.annotation.*;
@@ -22,26 +20,37 @@ public class SongDBController {
             .withRegion(Regions.US_EAST_1)
             .build();
     public DynamoDB dynamoDB = new DynamoDB(client);
+    DynamoDBMapper dbMapper = new DynamoDBMapper(client);
 
     @GetMapping("/RedVelvet")
     public String redVelvetTest(@RequestParam(value = "song", defaultValue = "Happiness") String song) {
         return String.format("Hello %s!", song);
     }
 
-    //Gets suggestions for User
-    @PostMapping(value = "/Suggestions/add/{userId}", headers = "Accept=application/json")
-    public PutItemOutcome addSuggestions(@PathVariable("userId") String userId,@RequestBody Song song) {
+    //Posts suggestions for User
+    @PostMapping(path = "/Songs/add/{userId}", consumes = "application/json", produces = "application/json")
+    public String addSong(@PathVariable("userId") String userId,@RequestBody Song song) {
+        TableWriteItems tableWriteItems = new TableWriteItems("song_table")
+                .withItemsToPut(
+                        new Item()
+                                .withPrimaryKey("songId", song.getSongId())
+                                .withString("artistName",song.getArtistName())
+                                .withInt("length",song.getLength())
+                                .withInt("likes", song.getLikes())
+                                .withString("link",song.getLink())
+                                .withString("name", song.getName())
+                );
+        BatchWriteItemOutcome batchWriteItemOutcome =  dynamoDB.batchWriteItem(tableWriteItems);
+        System.out.println(batchWriteItemOutcome.getBatchWriteItemResult());
+        return "Uploaded";
+    }
 
-        Table suggestionsTable = dynamoDB.getTable("suggestions_table");
-        GetItemSpec spec = new GetItemSpec().withPrimaryKey("userId", "zion");
-        System.out.println(suggestionsTable.getItem(spec));
-        List<Song> suggestSongItems = new ArrayList<Song>();
-        suggestSongItems.add(song);
-        Item suggestItem = new Item()
-                .withPrimaryKey("userId", userId)
-                .withList("suggestionList", suggestSongItems);
-        PutItemOutcome outcome = suggestionsTable.putItem(suggestItem);
-        return outcome;
+    @GetMapping(path = "Songs/retrieve",consumes = "application/json",produces = "application/json")
+    public ArrayList<Song> retrieveSong(@RequestBody List<Integer> songsList){
+        Table songTable = dynamoDB.getTable("song_table");
+        ArrayList<Song> retrievedSongs = new ArrayList<Song>();
+        songsList.stream().forEach(integer -> System.out.println(songTable.getItem("SongId",integer)));
+        return retrievedSongs;
     }
 
 
