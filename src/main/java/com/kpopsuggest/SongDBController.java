@@ -1,6 +1,9 @@
 package com.kpopsuggest;
 
 import Model.Song;
+import Model.SongIDWrapper;
+import Utils.Constants;
+import Utils.SongDBUtil;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -8,10 +11,13 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import io.netty.util.Constant;
+import org.apache.tomcat.util.bcel.Const;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class SongDBController {
@@ -33,23 +39,29 @@ public class SongDBController {
         TableWriteItems tableWriteItems = new TableWriteItems("song_table")
                 .withItemsToPut(
                         new Item()
-                                .withPrimaryKey("songId", song.getSongId())
-                                .withString("artistName",song.getArtistName())
-                                .withInt("length",song.getLength())
-                                .withInt("likes", song.getLikes())
-                                .withString("link",song.getLink())
-                                .withString("name", song.getName())
+                                .withPrimaryKey(Constants.SONG_ID.attribute, song.getSongId())
+                                .withString(Constants.NAME.attribute,song.getArtistName())
+                                .withInt(Constants.LENGTH.attribute,song.getLength())
+                                .withInt(Constants.LIKES.attribute, song.getLikes())
+                                .withString(Constants.LINK.attribute,song.getLink())
+                                .withString(Constants.NAME.attribute, song.getName())
                 );
         BatchWriteItemOutcome batchWriteItemOutcome =  dynamoDB.batchWriteItem(tableWriteItems);
-        System.out.println(batchWriteItemOutcome.getBatchWriteItemResult());
+//        System.out.println(batchWriteItemOutcome.getBatchWriteItemResult());
         return "Uploaded";
     }
 
+    //Retrieves song using song-ids
     @GetMapping(path = "Songs/retrieve",consumes = "application/json",produces = "application/json")
-    public ArrayList<Song> retrieveSong(@RequestBody List<Integer> songsList){
+    public ArrayList<Song> retrieveSong(@RequestBody SongIDWrapper songIDList){
         Table songTable = dynamoDB.getTable("song_table");
+        ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        songsList.stream().forEach(integer -> System.out.println(songTable.getItem("SongId",integer)));
+        songIDList.getSongID().stream().forEach(integer -> retrievedItems.add(songTable.getItem("songId",integer)));
+        SongDBUtil songDBUtil = new SongDBUtil();
+        for (Item songItem: retrievedItems) {
+            retrievedSongs.add(songDBUtil.transferItem(songItem.attributes(),new Song()));
+        }
         return retrievedSongs;
     }
 
