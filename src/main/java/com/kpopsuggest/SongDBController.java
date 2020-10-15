@@ -9,15 +9,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import io.netty.util.Constant;
-import org.apache.tomcat.util.bcel.Const;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 public class SongDBController {
@@ -33,26 +32,73 @@ public class SongDBController {
         return String.format("Hello %s!", song);
     }
 
-    //Posts suggestions for User
+    /**
+     * Adds song
+     * @param userId
+     * @param song
+     * @return
+     */
     @PostMapping(path = "/Songs/add/{userId}", consumes = "application/json", produces = "application/json")
     public String addSong(@PathVariable("userId") String userId,@RequestBody Song song) {
-        TableWriteItems tableWriteItems = new TableWriteItems("song_table")
-                .withItemsToPut(
-                        new Item()
-                                .withPrimaryKey(Constants.SONG_ID.attribute, song.getSongId())
-                                .withString(Constants.NAME.attribute,song.getArtistName())
-                                .withInt(Constants.LENGTH.attribute,song.getLength())
-                                .withInt(Constants.LIKES.attribute, song.getLikes())
-                                .withString(Constants.LINK.attribute,song.getLink())
-                                .withString(Constants.NAME.attribute, song.getName())
-                );
-        BatchWriteItemOutcome batchWriteItemOutcome =  dynamoDB.batchWriteItem(tableWriteItems);
-//        System.out.println(batchWriteItemOutcome.getBatchWriteItemResult());
-        return "Uploaded";
+        TableWriteItems tableWriteItems;
+        BatchWriteItemOutcome batchWriteItemOutcome;
+        try {
+            SecureRandom songIDGenerator = SecureRandom.getInstance("SHA1PRNG");
+            tableWriteItems = new TableWriteItems("song_table")
+                    .withItemsToPut(
+                            new Item()
+                                    .withPrimaryKey(Constants.SONG_ID.attribute, new Integer(songIDGenerator.nextInt(Integer.MAX_VALUE)))
+                                    .withString(Constants.ARTIST_NAME.attribute,song.getArtistName())
+                                    .withInt(Constants.LENGTH.attribute,song.getTimeLength())
+                                    .withInt(Constants.LIKES.attribute, song.getLikes())
+                                    .withString(Constants.LINK.attribute,song.getLink())
+                                    .withString(Constants.NAME.attribute, song.getTitle())
+                    );
+            batchWriteItemOutcome =  dynamoDB.batchWriteItem(tableWriteItems);
+            return batchWriteItemOutcome.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "500";
     }
 
-    //Retrieves song using song-ids
-    @GetMapping(path = "Songs/retrieve",consumes = "application/json",produces = "application/json")
+    @PutMapping(path = "/Songs/edit/{songID}",consumes = "application/json",produces = "application/json")
+    public String editSong(@RequestBody Song song){
+        Table songTable = dynamoDB.getTable("song_table");
+        String result = "";
+        UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",song.getSongId())
+                .withUpdateExpression("set artistName = :a,timeLength = :l,likes = :k,link = :n, title = :t")
+                .withValueMap(new ValueMap().withString(":a",song.getArtistName())
+                                .withInt(":l",song.getTimeLength())
+                                .withInt(":k", song.getLikes())
+                                .withString(":n",song.getLink())
+                                .withString(":t", song.getTitle()))
+                .withReturnValues(ReturnValue.UPDATED_NEW);;
+        try{
+            UpdateItemOutcome updateSongOutcome = songTable.updateItem(updateSongSpec);
+            result = updateSongOutcome.getItem().toJSONPretty();
+        }catch(Exception exception){
+            System.err.println(exception.toString());
+        }
+//        TableWriteItems tableWriteItems = new TableWriteItems("song_table")
+//                .withItemsToPut(
+//                        new Item()
+//                                .withPrimaryKey(Constants.SONG_ID.attribute, song.getSongId())
+//                                .withString(Constants.NAME.attribute,song.getArtistName())
+//                                .withInt(Constants.LENGTH.attribute,song.getLength())
+//                                .withInt(Constants.LIKES.attribute, song.getLikes())
+//                                .withString(Constants.LINK.attribute,song.getLink())
+//                                .withString(Constants.NAME.attribute, song.getName())
+//                );
+        return result;
+    }
+
+    /**
+     * Retrieves song
+     * @param songIDList
+     * @return
+     */
+    @GetMapping(path = "/Songs/retrieve",consumes = "application/json",produces = "application/json")
     public ArrayList<Song> retrieveSong(@RequestBody SongIDWrapper songIDList){
         Table songTable = dynamoDB.getTable("song_table");
         ArrayList<Item> retrievedItems = new ArrayList<Item>();

@@ -1,8 +1,6 @@
 package Utils;
 
 import Model.Song;
-import Model.SongIDWrapper;
-import com.amazonaws.services.dynamodbv2.document.Item;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -19,10 +17,10 @@ public class SongDBUtil {
                 case "artistName": song.setArtistName(o.getValue().toString());
                     break;
                 case "length":  intConverter = (BigDecimal) o.getValue();
-                               song.setLength(intConverter.intValue());
+                               song.setTimeLength(intConverter.intValue());
                 case "link": song.setLink(o.getValue().toString());
                     break;
-                case "name": song.setName(o.getValue().toString());
+                case "name": song.setTitle(o.getValue().toString());
                     break;
                 case "likes": intConverter = (BigDecimal) o.getValue();
                     song.setLikes(intConverter.intValue());

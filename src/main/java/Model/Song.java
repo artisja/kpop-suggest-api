@@ -12,11 +12,11 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName="song_table")
 public class Song {
 
-    String name;
+    String title;
     String link;
     int songId;
     String artistName;
-    int length,likes;
+    int timeLength,likes;
 //    Artist features;
     ArrayList<Suggest> suggests;
 
@@ -25,16 +25,16 @@ public class Song {
     }
 
     @DynamoDBAttribute(attributeName = "name")
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
     @DynamoDBAttribute(attributeName = "link")
     public String getLink() { return link; }
 
     @DynamoDBAttribute(attributeName = "length")
-    public int getLength() {
-        return length;
+    public int getTimeLength() {
+        return timeLength;
     }
 
     @DynamoDBAttribute(attributeName = "artistName")
@@ -55,8 +55,8 @@ public class Song {
         return suggests;
     }
 
-   public void setName(String name) {
-       this.name = name;
+   public void setTitle(String title) {
+       this.title = title;
    }
 
     public void setLikes(int likes) { this.likes = likes; }
@@ -65,8 +65,8 @@ public class Song {
         this.link = link;
     }
 
-    public void setLength(int length) {
-        this.length = length;
+    public void setTimeLength(int timeLength) {
+        this.timeLength = timeLength;
     }
 
     public void setSuggests(ArrayList<Suggest> suggests) {
