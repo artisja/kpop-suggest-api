@@ -80,16 +80,6 @@ public class SongDBController {
         }catch(Exception exception){
             System.err.println(exception.toString());
         }
-//        TableWriteItems tableWriteItems = new TableWriteItems("song_table")
-//                .withItemsToPut(
-//                        new Item()
-//                                .withPrimaryKey(Constants.SONG_ID.attribute, song.getSongId())
-//                                .withString(Constants.NAME.attribute,song.getArtistName())
-//                                .withInt(Constants.LENGTH.attribute,song.getLength())
-//                                .withInt(Constants.LIKES.attribute, song.getLikes())
-//                                .withString(Constants.LINK.attribute,song.getLink())
-//                                .withString(Constants.NAME.attribute, song.getName())
-//                );
         return result;
     }
 
@@ -106,7 +96,7 @@ public class SongDBController {
         songIDList.getSongID().stream().forEach(integer -> retrievedItems.add(songTable.getItem("songId",integer)));
         SongDBUtil songDBUtil = new SongDBUtil();
         for (Item songItem: retrievedItems) {
-            retrievedSongs.add(songDBUtil.transferItem(songItem.attributes(),new Song()));
+            retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
         }
         return retrievedSongs;
     }

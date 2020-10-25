@@ -3,6 +3,7 @@ package Utils;
 import Model.Song;
 
 import java.math.BigDecimal;
+import java.util.Iterator;
 import java.util.Map;
 
 public class SongDBUtil {
@@ -10,22 +11,23 @@ public class SongDBUtil {
     public SongDBUtil(){
     }
 
-    public Song transferItem(Iterable<java.util.Map.Entry<String, Object>> map,Song song) {
+    public Song transferItem(Iterator<Map.Entry<String, Object>> map, Song song) {
         BigDecimal intConverter = new BigDecimal(0);
-        for (Map.Entry<String,Object> o  : map) {
-            switch (o.getKey()){
-                case "artistName": song.setArtistName(o.getValue().toString());
+        while (map.hasNext()) {
+            Map.Entry songObject = map.next();
+            switch (songObject.getKey().toString()){
+                case "artistName": song.setArtistName(songObject.getValue().toString());
                     break;
-                case "length":  intConverter = (BigDecimal) o.getValue();
+                case "length": intConverter = (BigDecimal) songObject.getValue();
                                song.setTimeLength(intConverter.intValue());
-                case "link": song.setLink(o.getValue().toString());
+                case "link": song.setLink(songObject.getValue().toString());
                     break;
-                case "name": song.setTitle(o.getValue().toString());
+                case "name": song.setTitle(songObject.getValue().toString());
                     break;
-                case "likes": intConverter = (BigDecimal) o.getValue();
+                case "likes": intConverter = (BigDecimal) songObject.getValue();
                     song.setLikes(intConverter.intValue());
                     break;
-                case "songId": intConverter = (BigDecimal) o.getValue();
+                case "songId": intConverter = (BigDecimal) songObject.getValue();
                     song.setSongId(intConverter.intValue());
                     break;
             }
