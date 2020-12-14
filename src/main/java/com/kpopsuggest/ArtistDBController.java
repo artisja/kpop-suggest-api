@@ -33,8 +33,8 @@ import com.wrapper.spotify.SpotifyApi;
 public class ArtistDBController {
 
     private static final SpotifyApi spotifyApi = new SpotifyApi.Builder()
-            .setClientId("6b6899ebcf2f42a69575e0960e60d012")
-            .setClientSecret("51c9ed8f8ba342e1905efe895b37caeb")
+            .setClientId()
+            .setClientSecret()
             .build();
 
     private static ClientCredentialsRequest clientCredentialsRequest = spotifyApi.clientCredentials()
