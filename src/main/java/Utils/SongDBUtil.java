@@ -22,7 +22,7 @@ public class SongDBUtil {
                                song.setTimeLength(intConverter.intValue());
                 case "link": song.setLink(songObject.getValue().toString());
                     break;
-                case "name": song.setTitle(songObject.getValue().toString());
+                case "title": song.setTitle(songObject.getValue().toString());
                     break;
                 case "likes": intConverter = (BigDecimal) songObject.getValue();
                     song.setLikes(intConverter.intValue());

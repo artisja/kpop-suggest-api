@@ -1,7 +1,6 @@
 package com.kpopsuggest;
 
 import Model.Song;
-import Model.SongCustomException;
 import Model.SongIDWrapper;
 import Utils.Constants;
 import Utils.SongDBUtil;
@@ -13,7 +12,8 @@ import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.google.api.client.json.Json;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
 import com.wrapper.spotify.model_objects.specification.Artist;
@@ -21,6 +21,8 @@ import com.wrapper.spotify.requests.authorization.client_credentials.ClientCrede
 import com.wrapper.spotify.requests.data.artists.GetArtistRequest;
 import net.minidev.json.JSONObject;
 import org.apache.hc.core5.http.ParseException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -119,16 +121,36 @@ public class ArtistDBController {
      * @return
      */
     @GetMapping(path = "/Songs/retrieve",consumes = "application/json",produces = "application/json")
-    public ArrayList<Song> retrieveSong(@RequestBody SongIDWrapper songIDList){
+    @ResponseStatus(HttpStatus.FOUND)
+    public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
+        ObjectMapper songJsonMapper = new ObjectMapper();
         Table songTable = dynamoDB.getTable("song_table");
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        songIDList.getSongID().stream().forEach(integer -> retrievedItems.add(songTable.getItem("songId",integer)));
+        songIDList.getSongIDs().stream().forEach(integer -> retrievedItems.add(songTable.getItem("songId",integer)));
         SongDBUtil songDBUtil = new SongDBUtil();
+        //may want to add a save for if songID not found
         for (Item songItem: retrievedItems) {
-            retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
+            if(songItem!=null){
+                retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
+            }
         }
-        return retrievedSongs;
+        String songsJson = "";
+        try {
+            songsJson = songJsonMapper.writeValueAsString(retrievedSongs);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        if(retrievedSongs.size()!=songIDList.getSongIDs().size()){
+            return new ResponseEntity<>(
+                    songsJson,
+                    HttpStatus.PARTIAL_CONTENT);
+        }
+
+        return new ResponseEntity<>(
+                songsJson,
+                HttpStatus.FOUND);
     }
 
     /**

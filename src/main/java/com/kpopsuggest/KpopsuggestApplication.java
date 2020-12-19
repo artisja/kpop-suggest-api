@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
-@ComponentScan(basePackageClasses = SongDBController.class)
+@ComponentScan(basePackageClasses = ArtistDBController.class)
 public class KpopsuggestApplication {
 
 

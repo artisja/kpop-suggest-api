@@ -9,7 +9,7 @@ public class SongIDWrapper {
 
     }
 
-    public List<Integer> getSongID() {
+    public List<Integer> getSongIDs() {
         return songID;
     }
 
