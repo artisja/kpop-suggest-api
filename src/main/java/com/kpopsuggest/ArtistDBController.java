@@ -21,6 +21,7 @@ import com.wrapper.spotify.requests.authorization.client_credentials.ClientCrede
 import com.wrapper.spotify.requests.data.artists.GetArtistRequest;
 import net.minidev.json.JSONObject;
 import org.apache.hc.core5.http.ParseException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,18 +32,26 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import com.wrapper.spotify.SpotifyApi;
 
+import javax.annotation.PostConstruct;
+
 @RestController
 public class ArtistDBController {
 
-    private static final SpotifyApi spotifyApi = new SpotifyApi.Builder()
-            .setClientId()
-            .setClientSecret()
-            .build();
+    @Value("${client.id}")
+    private String clientId;
 
-    private static ClientCredentialsRequest clientCredentialsRequest = spotifyApi.clientCredentials()
-            .build();
+    @Value("${client.secret}")
+    private String clientSecret;
 
-    static {
+    private SpotifyApi spotifyApi;
+    @PostConstruct
+    public void init(){
+        spotifyApi = new SpotifyApi.Builder()
+                .setClientId(clientId)
+                .setClientSecret(clientSecret)
+                .build();
+        ClientCredentialsRequest clientCredentialsRequest = spotifyApi.clientCredentials()
+                .build();
         try {
             ClientCredentials clientCredentials = clientCredentialsRequest.execute();
             spotifyApi.setAccessToken(clientCredentials.getAccessToken());
