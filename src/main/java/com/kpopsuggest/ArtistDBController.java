@@ -17,8 +17,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
 import com.wrapper.spotify.model_objects.specification.Artist;
+import com.wrapper.spotify.model_objects.specification.Paging;
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
 import com.wrapper.spotify.requests.data.artists.GetArtistRequest;
+import com.wrapper.spotify.requests.data.search.simplified.SearchArtistsRequest;
 import net.minidev.json.JSONObject;
 import org.apache.hc.core5.http.ParseException;
 import org.springframework.beans.factory.annotation.Value;
@@ -164,30 +166,36 @@ public class ArtistDBController {
 
     /**
      *
-     * @param artistId
+     * @param artistName
      * @return
      */
-    @PutMapping(path = "/Artist/add",consumes = "application/json",produces = "application/json")
-    public String addArtist(@RequestBody String artistId){
-        if(isInputInvalid(artistId)){
+    @PutMapping(path = "/search/artist/{artist}",consumes = "application/json",produces = "application/json")
+    public String searchArtist(@PathVariable("artist") String artistName){
+        if(isInputInvalid(artistName)){
             try {
                 throw new Exception();
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
         }
-        GetArtistRequest getArtistRequest = spotifyApi.getArtist(artistId).build();
-        Artist artist = null;
-        try {
-            artist = getArtistRequest.execute();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            e.printStackTrace();
-        }
+        Artist artist = artistExecuteRequest(artistName);
         JSONObject json = new JSONObject();
         json.put("name",artist.getName());
         json.put("genre",artist.getGenres());
         json.put("followers",artist.getFollowers().toString());
         return json.toJSONString();
+    }
+
+    private Artist artistExecuteRequest(String artistName) {
+
+        SearchArtistsRequest searchArtistsRequest = spotifyApi.searchArtists(artistName).limit(5).build();
+        Paging<Artist> artistPaging = null;
+        try {
+            artistPaging  = searchArtistsRequest.execute();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            e.printStackTrace();
+        }
+        return artistPaging.getItems()[0];
     }
 
 
