@@ -92,15 +92,16 @@ public class ArtistDBController {
             exception.printStackTrace();
         }
         BatchWriteItemOutcome batchWriteItemOutcome = null;
+        Track topTrack = trackPaging.getItems()[0];
         try {
-            batchWriteItemOutcome =  dynamoDB.batchWriteItem(convertTrackToItem(trackPaging.getItems()[0]));
+            batchWriteItemOutcome =  dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
         JSONObject json = new JSONObject();
         json.put("Status", HttpStatus.CREATED);
         json.put("Result", batchWriteItemOutcome.getBatchWriteItemResult().toString());
-        json.put("link","/Song/"+);
+        json.put("link","/Song/"+topTrack.getId());
         return json.toJSONString();
     }
 
