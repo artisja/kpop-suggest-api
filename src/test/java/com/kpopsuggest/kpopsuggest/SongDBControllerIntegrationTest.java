@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
 import com.kpopsuggest.ArtistDBController;
+import com.wrapper.spotify.model_objects.specification.Track;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,15 +47,17 @@ public class SongDBControllerIntegrationTest {
 
     @Test
     public void testConvertSongNotNull() throws NoSuchAlgorithmException {
-        when(artistDBController.convertSong(song)).thenReturn(new TableWriteItems("song_table"));
-        Assert.notNull(artistDBController.convertSong(song));
+        Track track = null;
+        when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems("song_table"));
+        Assert.notNull(artistDBController.convertTrackToItem(track));
     }
 
     @Test
     public void testAddSongIsNull() throws NoSuchAlgorithmException {
-        when(artistDBController.convertSong(song)).thenReturn(new TableWriteItems("song_table"));
+        Track track = null;
+        when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems("song_table"));
         when(dynamoDB.batchWriteItem((TableWriteItems) Mockito.anyObject())).thenReturn(new BatchWriteItemOutcome(new BatchWriteItemResult()));
 //        when(songDBController.addSong(Mockito.anyString(),eq(song))).thenReturn(Mockito.anyObject());
-        Assert.isNull(artistDBController.addSong("artis",song));
+        Assert.isNull(artistDBController.addSong("artis"));
     }
 }
