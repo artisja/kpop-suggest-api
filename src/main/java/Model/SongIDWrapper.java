@@ -3,17 +3,17 @@ package Model;
 import java.util.List;
 
 public class SongIDWrapper {
-    public List<Integer> songID;
+    public List<String> songID;
 
     public SongIDWrapper(){
 
     }
 
-    public List<Integer> getSongIDs() {
+    public List<String> getSongIDs() {
         return songID;
     }
 
-    public void setSongID(List<Integer> songID) {
+    public void setSongID(List<String> songID) {
         this.songID = songID;
     }
 }

@@ -106,7 +106,7 @@ public class ArtistDBController {
     }
 
     public TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
-        return new TableWriteItems("songs")
+        return new TableWriteItems("songs_table")
                 .withItemsToPut(
                         new Item()
                                 .withPrimaryKey(Constants.SONG_ID.attribute, track.getId())
@@ -120,7 +120,7 @@ public class ArtistDBController {
 
     @PutMapping(path = "/Songs/edit/{songID}",consumes = "application/json",produces = "application/json")
     public String editSong(@RequestBody Song song){
-        Table songTable = dynamoDB.getTable("songs");
+        Table songTable = dynamoDB.getTable("songs_table");
         String result = "";
         UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",song.getSongId())
                 .withUpdateExpression("set artistName = :a,timeLength = :l,likes = :k,link = :n, title = :t")
@@ -196,10 +196,14 @@ public class ArtistDBController {
     @ResponseStatus(HttpStatus.FOUND)
     public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
         ObjectMapper songJsonMapper = new ObjectMapper();
-        Table songTable = dynamoDB.getTable("songs");
+        Table songTable = dynamoDB.getTable("songs_table");
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        songIDList.getSongIDs().stream().forEach(integer -> retrievedItems.add(songTable.getItem("songId",integer)));
+        PrimaryKey primaryKey = new PrimaryKey().addComponent("songId","4ML3iXqwb35FHG0SW1HVGc");
+        retrievedItems.add(songTable.getItem(primaryKey));
+//        songIDList.getSongIDs().stream().forEach(
+//                songId -> retrievedItems.add(songTable.getItem(new PrimaryKey().addComponent("id",songId)))
+//        );
         SongDBUtil songDBUtil = new SongDBUtil();
         //may want to add a save for if songID not found
         for (Item songItem: retrievedItems) {
