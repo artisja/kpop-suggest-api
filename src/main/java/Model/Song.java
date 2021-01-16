@@ -14,7 +14,7 @@ public class Song {
 
     String title;
     String link;
-    int songId;
+    String songId;
     String artistName;
     int timeLength,likes;
 //    Artist features;
@@ -40,8 +40,8 @@ public class Song {
     @DynamoDBAttribute(attributeName = "artistName")
     public String getArtistName() { return artistName; }
 
-    @DynamoDBHashKey(attributeName = "songID")
-    public int getSongId() { return songId; }
+    @DynamoDBHashKey(attributeName = "songId")
+    public String getSongId() { return songId; }
 
     @DynamoDBAttribute(attributeName = "likes")
     public int getLikes() { return likes; }
@@ -75,7 +75,7 @@ public class Song {
 
     public void setArtistName(String artistName) { this.artistName = artistName; }
 
-    public void setSongId(int songId) { this.songId = songId; }
+    public void setSongId(String songId) { this.songId = songId; }
 
     //    public void setFeatures(Artist features) {
 //        this.features = features;

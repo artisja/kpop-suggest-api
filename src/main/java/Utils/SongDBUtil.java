@@ -27,8 +27,7 @@ public class SongDBUtil {
                 case "likes": intConverter = (BigDecimal) songObject.getValue();
                     song.setLikes(intConverter.intValue());
                     break;
-                case "songId": intConverter = (BigDecimal) songObject.getValue();
-                    song.setSongId(intConverter.intValue());
+                case "songId": song.setSongId(songObject.getValue().toString());
                     break;
             }
         }

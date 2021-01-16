@@ -83,7 +83,7 @@ public class ArtistDBController {
      * @param songName
      * @return
      */
-    @PutMapping(path = "/Song/add/{songName}", consumes = "application/json", produces = "application/json")
+    @PutMapping(path = "/Song/add/{songName}", produces = "application/json")
     public String addSong(@PathVariable("songName") String songName) {
         Paging<Track>  trackPaging = null;
         try {
@@ -91,12 +91,16 @@ public class ArtistDBController {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+
         BatchWriteItemOutcome batchWriteItemOutcome = null;
         Track topTrack = trackPaging.getItems()[0];
         try {
-            batchWriteItemOutcome =  dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
+            batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            JSONObject json = new JSONObject();
+            json.put("Status", HttpStatus.CONFLICT);
+            json.put("Result","Duplicate Song");
+            return json.toJSONString();
         }
         JSONObject json = new JSONObject();
         json.put("Status", HttpStatus.CREATED);
@@ -106,21 +110,21 @@ public class ArtistDBController {
     }
 
     public TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
-        return new TableWriteItems("songs_table")
+        return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
                                 .withPrimaryKey(Constants.SONG_ID.attribute, track.getId())
-                                .withString(Constants.ARTIST_NAME.attribute,track.getName())
+                                .withString(Constants.ARTIST_NAME.attribute,track.getArtists()[0].getName())
                                 .withInt(Constants.LENGTH.attribute,track.getDurationMs())
                                 .withInt(Constants.LIKES.attribute, track.getPopularity())
                                 .withString(Constants.LINK.attribute,track.getUri())
-                                .withString(Constants.NAME.attribute, String.valueOf(track.getArtists()[0]))
+                                .withString(Constants.NAME.attribute, String.valueOf(track.getName()))
                 );
     }
 
     @PutMapping(path = "/Songs/edit/{songID}",consumes = "application/json",produces = "application/json")
     public String editSong(@RequestBody Song song){
-        Table songTable = dynamoDB.getTable("songs_table");
+        Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         String result = "";
         UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",song.getSongId())
                 .withUpdateExpression("set artistName = :a,timeLength = :l,likes = :k,link = :n, title = :t")
@@ -196,14 +200,16 @@ public class ArtistDBController {
     @ResponseStatus(HttpStatus.FOUND)
     public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
         ObjectMapper songJsonMapper = new ObjectMapper();
-        Table songTable = dynamoDB.getTable("songs_table");
+        String songsJson = "";
+        Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        PrimaryKey primaryKey = new PrimaryKey().addComponent("songId","4ML3iXqwb35FHG0SW1HVGc");
-        retrievedItems.add(songTable.getItem(primaryKey));
-//        songIDList.getSongIDs().stream().forEach(
-//                songId -> retrievedItems.add(songTable.getItem(new PrimaryKey().addComponent("id",songId)))
-//        );
+        try{
+            retrievedItems.add(songTable.getItem("songId","4ML3iXqwb35FHG0SW1HVGc"));
+        }catch (Exception exception){
+            System.out.println(exception.getCause() + " " + exception.getMessage());
+        }
+//        songIDList.getSongIDs().stream().forEach(songId -> retrievedItems.add());
         SongDBUtil songDBUtil = new SongDBUtil();
         //may want to add a save for if songID not found
         for (Item songItem: retrievedItems) {
@@ -211,7 +217,6 @@ public class ArtistDBController {
                 retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
             }
         }
-        String songsJson = "";
         try {
             songsJson = songJsonMapper.writeValueAsString(retrievedSongs);
         } catch (JsonProcessingException e) {
