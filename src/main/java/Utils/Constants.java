@@ -1,12 +1,13 @@
 package Utils;
 
 public enum Constants {
-    SONG_ID("id"),
+    SONG_ID("songId"),
     ARTIST_NAME("artistName"),
     LENGTH("length"),
     LIKES("likes"),
     LINK("link"),
-    NAME("name");
+    NAME("name"),
+    TABLE("songs_table");
 
     public final String attribute;
 
