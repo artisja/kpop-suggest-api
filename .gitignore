@@ -29,11 +29,7 @@ build/
 
 src/main/resources/application.properties
 
-<<<<<<< HEAD
-*.properties
-=======
 *.properties
 
 .DS_Store
 src/.DS_Store
->>>>>>> recommit

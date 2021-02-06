@@ -1,7 +1,7 @@
 package Utils;
 
 public enum Constants {
-    SONG_ID("id"),
+    SONG_ID("songId"),
     ARTIST_NAME("artistName"),
     LENGTH("length"),
     LIKES("likes"),

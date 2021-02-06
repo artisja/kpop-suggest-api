@@ -83,11 +83,7 @@ public class ArtistDBController {
      * @param songName
      * @return
      */
-<<<<<<< HEAD
-    @PutMapping(path = "/Song/add/{songName}", consumes = "application/json", produces = "application/json")
-=======
     @PutMapping(path = "/Song/add/{songName}", produces = "application/json")
->>>>>>> recommit
     public String addSong(@PathVariable("songName") String songName) {
         Paging<Track>  trackPaging = null;
         try {
@@ -95,18 +91,11 @@ public class ArtistDBController {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
-<<<<<<< HEAD
-        BatchWriteItemOutcome batchWriteItemOutcome = null;
-        Track topTrack = trackPaging.getItems()[0];
-        try {
-            batchWriteItemOutcome =  dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
-=======
 
         BatchWriteItemOutcome batchWriteItemOutcome = null;
         Track topTrack = trackPaging.getItems()[0];
         try {
             batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
->>>>>>> recommit
         } catch (NoSuchAlgorithmException e) {
             JSONObject json = new JSONObject();
             json.put("Status", HttpStatus.CONFLICT);
@@ -121,17 +110,6 @@ public class ArtistDBController {
     }
 
     public TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
-<<<<<<< HEAD
-        return new TableWriteItems("songs_table")
-                .withItemsToPut(
-                        new Item()
-                                .withPrimaryKey(Constants.SONG_ID.attribute, track.getId())
-                                .withString(Constants.ARTIST_NAME.attribute,track.getName())
-                                .withInt(Constants.LENGTH.attribute,track.getDurationMs())
-                                .withInt(Constants.LIKES.attribute, track.getPopularity())
-                                .withString(Constants.LINK.attribute,track.getUri())
-                                .withString(Constants.NAME.attribute, String.valueOf(track.getArtists()[0]))
-=======
         return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
@@ -141,17 +119,12 @@ public class ArtistDBController {
                                 .withInt(Constants.LIKES.attribute, track.getPopularity())
                                 .withString(Constants.LINK.attribute,track.getUri())
                                 .withString(Constants.NAME.attribute, String.valueOf(track.getName()))
->>>>>>> recommit
                 );
     }
 
     @PutMapping(path = "/Songs/edit/{songID}",consumes = "application/json",produces = "application/json")
     public String editSong(@RequestBody Song song){
-<<<<<<< HEAD
-        Table songTable = dynamoDB.getTable("songs_table");
-=======
         Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
->>>>>>> recommit
         String result = "";
         UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",song.getSongId())
                 .withUpdateExpression("set artistName = :a,timeLength = :l,likes = :k,link = :n, title = :t")
@@ -227,16 +200,6 @@ public class ArtistDBController {
     @ResponseStatus(HttpStatus.FOUND)
     public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
         ObjectMapper songJsonMapper = new ObjectMapper();
-<<<<<<< HEAD
-        Table songTable = dynamoDB.getTable("songs_table");
-        ArrayList<Item> retrievedItems = new ArrayList<Item>();
-        ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        PrimaryKey primaryKey = new PrimaryKey().addComponent("songId","4ML3iXqwb35FHG0SW1HVGc");
-        retrievedItems.add(songTable.getItem(primaryKey));
-//        songIDList.getSongIDs().stream().forEach(
-//                songId -> retrievedItems.add(songTable.getItem(new PrimaryKey().addComponent("id",songId)))
-//        );
-=======
         String songsJson = "";
         Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
@@ -250,7 +213,6 @@ public class ArtistDBController {
                     exception.getCause(),
                     HttpStatus.NOT_FOUND);
         }
->>>>>>> recommit
         SongDBUtil songDBUtil = new SongDBUtil();
         //may want to add a save for if songID not found
         for (Item songItem: retrievedItems) {

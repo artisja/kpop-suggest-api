@@ -49,22 +49,14 @@ public class SongDBControllerIntegrationTest {
     @Test
     public void testConvertSongNotNull() throws NoSuchAlgorithmException {
         Track track = null;
-<<<<<<< HEAD
-        when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems("song_table"));
-=======
         when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems(Constants.TABLE.toString()));
->>>>>>> recommit
         Assert.notNull(artistDBController.convertTrackToItem(track));
     }
 
     @Test
     public void testAddSongIsNull() throws NoSuchAlgorithmException {
         Track track = null;
-<<<<<<< HEAD
-        when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems("song_table"));
-=======
         when(artistDBController.convertTrackToItem(track)).thenReturn(new TableWriteItems(Constants.TABLE.toString()));
->>>>>>> recommit
         when(dynamoDB.batchWriteItem((TableWriteItems) Mockito.anyObject())).thenReturn(new BatchWriteItemOutcome(new BatchWriteItemResult()));
 //        when(songDBController.addSong(Mockito.anyString(),eq(song))).thenReturn(Mockito.anyObject());
         Assert.isNull(artistDBController.addSong("artis"));
