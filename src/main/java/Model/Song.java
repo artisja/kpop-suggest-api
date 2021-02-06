@@ -3,21 +3,20 @@ package Model;
 import java.util.ArrayList;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 
 /**
  * Created by artisja on 4/11/20.
  */
-@DynamoDBTable(tableName="SongTable")
+@DynamoDBTable(tableName="song_table")
 public class Song {
 
-    String name;
+    String title;
     String link;
     String songId;
     String artistName;
-    int length,likes;
+    int timeLength,likes;
 //    Artist features;
     ArrayList<Suggest> suggests;
 
@@ -26,22 +25,22 @@ public class Song {
     }
 
     @DynamoDBAttribute(attributeName = "name")
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
     @DynamoDBAttribute(attributeName = "link")
     public String getLink() { return link; }
 
     @DynamoDBAttribute(attributeName = "length")
-    public int getLength() {
-        return length;
+    public int getTimeLength() {
+        return timeLength;
     }
 
     @DynamoDBAttribute(attributeName = "artistName")
     public String getArtistName() { return artistName; }
 
-    @DynamoDBHashKey(attributeName = "songID")
+    @DynamoDBHashKey(attributeName = "songId")
     public String getSongId() { return songId; }
 
     @DynamoDBAttribute(attributeName = "likes")
@@ -56,8 +55,8 @@ public class Song {
         return suggests;
     }
 
-   public void setName(String name) {
-       this.name = name;
+   public void setTitle(String title) {
+       this.title = title;
    }
 
     public void setLikes(int likes) { this.likes = likes; }
@@ -66,8 +65,8 @@ public class Song {
         this.link = link;
     }
 
-    public void setLength(int length) {
-        this.length = length;
+    public void setTimeLength(int timeLength) {
+        this.timeLength = timeLength;
     }
 
     public void setSuggests(ArrayList<Suggest> suggests) {

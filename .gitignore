@@ -27,5 +27,13 @@ target/
 /.nb-gradle/
 build/
 
-### VS Code ###
-.vscode/
+src/main/resources/application.properties
+
+<<<<<<< HEAD
+*.properties
+=======
+*.properties
+
+.DS_Store
+src/.DS_Store
+>>>>>>> recommit
