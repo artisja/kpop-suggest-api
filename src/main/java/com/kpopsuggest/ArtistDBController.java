@@ -205,11 +205,14 @@ public class ArtistDBController {
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
         try{
-            retrievedItems.add(songTable.getItem("songId","4ML3iXqwb35FHG0SW1HVGc"));
+         songIDList.getSongIDs().stream().forEach(
+                songId -> retrievedItems.add(songTable.getItem("songId",songId))
+         );
         }catch (Exception exception){
-            System.out.println(exception.getCause() + " " + exception.getMessage());
+            return new ResponseEntity<>(
+                    exception.getCause(),
+                    HttpStatus.NOT_FOUND);
         }
-//        songIDList.getSongIDs().stream().forEach(songId -> retrievedItems.add());
         SongDBUtil songDBUtil = new SongDBUtil();
         //may want to add a save for if songID not found
         for (Item songItem: retrievedItems) {
