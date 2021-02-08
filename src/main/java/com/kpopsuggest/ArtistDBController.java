@@ -33,9 +33,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Map;
+
 import com.wrapper.spotify.SpotifyApi;
 
 import javax.annotation.PostConstruct;
@@ -122,12 +125,14 @@ public class ArtistDBController {
                 );
     }
 
-    @PutMapping(path = "/Songs/edit/{songID}",consumes = "application/json",produces = "application/json")
-    public String editSong(@RequestBody Song song){
+    @PutMapping(path = "/Songs/update/{songId}",consumes = "application/json",produces = "application/json")
+    public String updateSong(@RequestBody Song song,@PathVariable String songId){
         Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         String result = "";
-        UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",song.getSongId())
-                .withUpdateExpression("set artistName = :a,timeLength = :l,likes = :k,link = :n, title = :t")
+        String updateExpression = buildUpdateExpression(song);
+
+        UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",songId)
+                .withUpdateExpression(updateExpression)
                 .withValueMap(new ValueMap().withString(":a",song.getArtistName())
                         .withInt(":l",song.getTimeLength())
                         .withInt(":k", song.getLikes())
@@ -143,6 +148,29 @@ public class ArtistDBController {
         return result;
     }
 
+    private String buildUpdateExpression(Song song) {
+        StringBuilder updateExpressionBuilder = new StringBuilder();
+        updateExpressionBuilder.append("set ");
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> props = mapper.convertValue(song, Map.class);
+        for(String propsKeys :props.keySet()) {
+            switch (propsKeys){
+                case "artistName": updateExpressionBuilder.append("artistName = :a,");
+                    break;
+                case "length": updateExpressionBuilder.append("timeLength = :l,");
+                    break;
+                case "link": updateExpressionBuilder.append("link = :n,");
+                    break;
+                case "songName": updateExpressionBuilder.append("songName = :t,");
+                    break;
+                case "likes": updateExpressionBuilder.append("likes = :k,");
+                    break;
+            }
+        }
+        updateExpressionBuilder.deleteCharAt(updateExpressionBuilder.lastIndexOf(","));
+       return updateExpressionBuilder.toString();
+    }
+
     /**
      *
      * Get Song
@@ -152,7 +180,7 @@ public class ArtistDBController {
     @GetMapping(value = "/Song/{songName}",produces = "application/json")
     @ResponseStatus(HttpStatus.FOUND)
     public String getSong(@PathVariable("songName") String songName) {
-
+        //check database for song if not there then will need to send suggestion
         Paging<Track> trackPaging = null;
         try {
             trackPaging = searchSong(songName);

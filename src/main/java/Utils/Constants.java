@@ -3,10 +3,10 @@ package Utils;
 public enum Constants {
     SONG_ID("songId"),
     ARTIST_NAME("artistName"),
-    LENGTH("length"),
+    LENGTH("timeLength"),
     LIKES("likes"),
     LINK("link"),
-    NAME("name"),
+    NAME("songName"),
     TABLE("songs_table");
 
     public final String attribute;
