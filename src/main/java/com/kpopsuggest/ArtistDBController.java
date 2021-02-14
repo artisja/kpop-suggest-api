@@ -2,7 +2,6 @@ package com.kpopsuggest;
 
 import Model.Song;
 import Model.SongIDWrapper;
-import Model.SongNotFoundException;
 import Utils.Constants;
 import Utils.SongDBUtil;
 import com.amazonaws.regions.Regions;
@@ -24,25 +23,20 @@ import com.wrapper.spotify.requests.authorization.client_credentials.ClientCrede
 import com.wrapper.spotify.requests.data.search.simplified.SearchArtistsRequest;
 import com.wrapper.spotify.requests.data.search.simplified.SearchTracksRequest;
 import net.minidev.json.JSONObject;
-import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Map;
 
 import com.wrapper.spotify.SpotifyApi;
 
 import javax.annotation.PostConstruct;
-import javax.naming.Name;
 
 @RestController
 public class ArtistDBController {
@@ -54,6 +48,7 @@ public class ArtistDBController {
     private String clientSecret;
 
     private SpotifyApi spotifyApi;
+
     @PostConstruct
     public void init(){
         spotifyApi = new SpotifyApi.Builder()
@@ -73,8 +68,9 @@ public class ArtistDBController {
     private AmazonDynamoDB client= AmazonDynamoDBClientBuilder.standard()
             .withRegion(Regions.US_EAST_1)
             .build();
-    public DynamoDB dynamoDB = new DynamoDB(client);
-    DynamoDBMapper dbMapper = new DynamoDBMapper(client);
+    private DynamoDB dynamoDB = new DynamoDB(client);
+    private final Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
+
 
     @GetMapping("/RedVelvet")
     public String redVelvetTest(@RequestParam(value = "song", defaultValue = "Happiness") String song) {
@@ -90,7 +86,7 @@ public class ArtistDBController {
     public String addSong(@PathVariable("songName") String songName) {
         Paging<Track>  trackPaging = null;
         try {
-            trackPaging =  searchSong(songName);
+            trackPaging = searchSpotifyForSong(songName);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -112,7 +108,7 @@ public class ArtistDBController {
         return json.toJSONString();
     }
 
-    public TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
+    private TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
         return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
@@ -127,7 +123,6 @@ public class ArtistDBController {
 
     @PutMapping(path = "/Songs/update/{songId}",consumes = "application/json",produces = "application/json")
     public String updateSong(@RequestBody Song song,@PathVariable String songId){
-        Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         String result = "";
         String updateExpression = buildUpdateExpression(song);
 
@@ -174,32 +169,40 @@ public class ArtistDBController {
     /**
      *
      * Get Song
+     *
+     * Will comment out as not needed as of now
      * @param songName
      * @return Json
      */
-    @GetMapping(value = "/Song/{songName}",produces = "application/json")
-    @ResponseStatus(HttpStatus.FOUND)
-    public String getSong(@PathVariable("songName") String songName) {
-        //check database for song if not there then will need to send suggestion
-        Paging<Track> trackPaging = null;
-        try {
-            trackPaging = searchSong(songName);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
+//    @GetMapping(value = "/Song/{songName}",produces = "application/json")
+//    @ResponseStatus(HttpStatus.FOUND)
+//    public String getSong(@PathVariable("songName") String songName) {
+//        //check database for song if not there then will need to send to spotify to retrieve
+//        String response = null;
+//        Item songitem = isSongCreated(songName);
+//        if(!songitem.isNull(Constants.SONG_ID.attribute)){
+//            response = songitem.toJSONPretty();
+//           return response;
+//        }else{
+//            Paging<Track> trackPaging = null;
+//            try {
+//                trackPaging = searchSpotifyForSong(songName);
+//                Track song = trackPaging.getItems()[0];
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                response = objectMapper.writeValueAsString(song);
+//            } catch (Exception exception) {
+//                exception.printStackTrace();
+//            }
+//        }
+//        return response;
+//    }
 
-        Track song = trackPaging.getItems()[0];
-        ObjectMapper objectMapper = new ObjectMapper();
-        String response = null;
-        try {
-           response = objectMapper.writeValueAsString(song);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return response;
+    private Item isSongCreated(String songName) {
+       Item songItem = songTable.getItem(new PrimaryKey(Constants.SONG_ID.attribute,songName));
+       return songItem;
     }
 
-    private Paging<Track> searchSong(String songName) throws Exception {
+    private Paging<Track> searchSpotifyForSong(String songName) throws Exception {
         SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(songName + " genre:k-pop").build();
         Paging<Track> trackPaging = null;
         try {
@@ -210,10 +213,6 @@ public class ArtistDBController {
             spotifyWebApiException.printStackTrace();
         } catch (ParseException parseException) {
             parseException.printStackTrace();
-        }
-
-        if(trackPaging.getItems().length==0){
-           throw new SongNotFoundException("Song not found");
         }
 
         return trackPaging;
@@ -229,7 +228,6 @@ public class ArtistDBController {
     public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
         ObjectMapper songJsonMapper = new ObjectMapper();
         String songsJson = "";
-        Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
         ArrayList<Item> retrievedItems = new ArrayList<Item>();
         ArrayList<Song> retrievedSongs = new ArrayList<Song>();
         try{
@@ -300,7 +298,7 @@ public class ArtistDBController {
     }
 
 
-    public boolean isInputInvalid(String input){
+    private boolean isInputInvalid(String input){
         return (input.contains("select") || input.contains("*"));
     }
 
