@@ -31,5 +31,7 @@ src/main/resources/application.properties
 
 *.properties
 
+Docker/kpopsuggest-0.0.1-SNAPSHOT.jar
+
 .DS_Store
 src/.DS_Store

@@ -68,8 +68,7 @@ public class ArtistDBController {
     private AmazonDynamoDB client= AmazonDynamoDBClientBuilder.standard()
             .withRegion(Regions.US_EAST_1)
             .build();
-    public DynamoDB dynamoDB = new DynamoDB(client);
-    DynamoDBMapper dbMapper = new DynamoDBMapper(client);
+    private DynamoDB dynamoDB = new DynamoDB(client);
     private final Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
 
 
@@ -87,7 +86,7 @@ public class ArtistDBController {
     public String addSong(@PathVariable("songName") String songName) {
         Paging<Track>  trackPaging = null;
         try {
-            trackPaging =  searchSpotifyForSong(songName);
+            trackPaging = searchSpotifyForSong(songName);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -109,7 +108,7 @@ public class ArtistDBController {
         return json.toJSONString();
     }
 
-    public TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
+    private TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
         return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
@@ -170,31 +169,33 @@ public class ArtistDBController {
     /**
      *
      * Get Song
+     *
+     * Will comment out as not needed as of now
      * @param songName
      * @return Json
      */
-    @GetMapping(value = "/Song/{songName}",produces = "application/json")
-    @ResponseStatus(HttpStatus.FOUND)
-    public String getSong(@PathVariable("songName") String songName) {
-        //check database for song if not there then will need to send to spotify to retrieve
-        String response = null;
-        Item songitem = isSongCreated(songName);
-        if(!songitem.isNull(Constants.SONG_ID.attribute)){
-            response = songitem.toJSONPretty();
-           return response;
-        }else{
-            Paging<Track> trackPaging = null;
-            try {
-                trackPaging = searchSpotifyForSong(songName);
-                Track song = trackPaging.getItems()[0];
-                ObjectMapper objectMapper = new ObjectMapper();
-                response = objectMapper.writeValueAsString(song);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-        }
-        return response;
-    }
+//    @GetMapping(value = "/Song/{songName}",produces = "application/json")
+//    @ResponseStatus(HttpStatus.FOUND)
+//    public String getSong(@PathVariable("songName") String songName) {
+//        //check database for song if not there then will need to send to spotify to retrieve
+//        String response = null;
+//        Item songitem = isSongCreated(songName);
+//        if(!songitem.isNull(Constants.SONG_ID.attribute)){
+//            response = songitem.toJSONPretty();
+//           return response;
+//        }else{
+//            Paging<Track> trackPaging = null;
+//            try {
+//                trackPaging = searchSpotifyForSong(songName);
+//                Track song = trackPaging.getItems()[0];
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                response = objectMapper.writeValueAsString(song);
+//            } catch (Exception exception) {
+//                exception.printStackTrace();
+//            }
+//        }
+//        return response;
+//    }
 
     private Item isSongCreated(String songName) {
        Item songItem = songTable.getItem(new PrimaryKey(Constants.SONG_ID.attribute,songName));
@@ -297,7 +298,7 @@ public class ArtistDBController {
     }
 
 
-    public boolean isInputInvalid(String input){
+    private boolean isInputInvalid(String input){
         return (input.contains("select") || input.contains("*"));
     }
 
