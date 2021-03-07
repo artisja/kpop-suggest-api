@@ -146,6 +146,7 @@ public class ArtistDBController {
             UpdateItemOutcome updateSongOutcome = songTable.updateItem(updateSongSpec);
             resultUpdate = updateSongOutcome.getItem().asMap();
             resultJson = new JSONObject(resultUpdate);
+            resultJson.put("link","/Songs/retrieve");
         }catch(Exception exception){
             System.err.println(exception);
             System.err.println(exception.toString());
@@ -214,10 +215,10 @@ public class ArtistDBController {
 //        return response;
 //    }
 
-    private Item isSongCreated(String songName) {
-       Item songItem = songTable.getItem(new PrimaryKey(Constants.SONG_ID.attribute,songName));
-       return songItem;
-    }
+//    private Item isSongCreated(String songName) {
+//       Item songItem = songTable.getItem(new PrimaryKey(Constants.SONG_ID.attribute,songName));
+//       return songItem;
+//    }
 
     private Paging<Track> searchSpotifyForSong(String songName) throws Exception {
         SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(songName + " genre:k-pop").build();
@@ -300,8 +301,12 @@ public class ArtistDBController {
         } catch (ParseException parseException) {
             parseException.printStackTrace();
         }
+        if(artistTracks.length==0){
+            return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.NOT_FOUND);
+        }
         searchResultJson.put("Artist Track Results", artistTracks);
         searchResultJson.put("Status", HttpStatus.FOUND);
+        searchResultJson.put("link","/Song/add/" + artistTracks[0]);
         return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.FOUND);
     }
 
