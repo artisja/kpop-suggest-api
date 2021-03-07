@@ -25,6 +25,7 @@ import com.wrapper.spotify.requests.authorization.client_credentials.ClientCrede
 import com.wrapper.spotify.requests.data.artists.GetArtistsTopTracksRequest;
 import com.wrapper.spotify.requests.data.search.simplified.SearchArtistsRequest;
 import com.wrapper.spotify.requests.data.search.simplified.SearchTracksRequest;
+import javafx.util.Pair;
 import net.minidev.json.JSONObject;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.tomcat.util.json.JSONParser;
@@ -133,50 +134,53 @@ public class ArtistDBController {
     @PutMapping(path = "/Songs/update/{songId}",consumes = "application/json",produces = "application/json")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ResponseEntity<JSONObject> updateSong(@RequestBody Song song,@PathVariable String songId){
-        String resultUpdate = "";
+        Map<String, Object> resultUpdate = null;
         JSONObject resultJson = null;
-        String updateExpression = buildUpdateExpression(song);
+        Pair<String,ValueMap> expressionUpdatePair = buildUpdateExpression(song);
 
         UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",songId)
-                .withUpdateExpression(updateExpression)
-                .withValueMap(new ValueMap().withString(":a",song.getArtistName())
-                        .withInt(":l",song.getTimeLength())
-                        .withInt(":k", song.getLikes())
-                        .withString(":n",song.getLink())
-                        .withString(":t", song.getTitle()))
-                .withReturnValues(ReturnValue.UPDATED_NEW);;
+                .withUpdateExpression(expressionUpdatePair.getKey())
+                .withValueMap(expressionUpdatePair.getValue())
+                .withReturnValues(ReturnValue.UPDATED_NEW);
         try{
             UpdateItemOutcome updateSongOutcome = songTable.updateItem(updateSongSpec);
-            resultUpdate = updateSongOutcome.getItem().toJSONPretty();
-            JSONParser parser = new JSONParser(resultUpdate);
-            resultJson = (JSONObject) parser.parse();
+            resultUpdate = updateSongOutcome.getItem().asMap();
+            resultJson = new JSONObject(resultUpdate);
         }catch(Exception exception){
+            System.err.println(exception);
             System.err.println(exception.toString());
         }
         return new ResponseEntity<JSONObject>(resultJson,HttpStatus.ACCEPTED);
     }
 
-    private String buildUpdateExpression(Song song) {
+    private Pair<String, ValueMap> buildUpdateExpression(Song song) {
         StringBuilder updateExpressionBuilder = new StringBuilder();
+        ValueMap expressionValueMap = new ValueMap();
         updateExpressionBuilder.append("set ");
         ObjectMapper mapper = new ObjectMapper();
         Map<String,Object> props = mapper.convertValue(song, Map.class);
+        props.values().removeIf(propVal -> propVal == null || propVal.toString().equals(0));
         for(String propsKeys :props.keySet()) {
             switch (propsKeys){
                 case "artistName": updateExpressionBuilder.append("artistName = :a,");
+                    expressionValueMap.withString(":a",song.getArtistName());
                     break;
                 case "length": updateExpressionBuilder.append("timeLength = :l,");
+                    expressionValueMap.withInt(":l",song.getTimeLength());
                     break;
                 case "link": updateExpressionBuilder.append("link = :n,");
+                    expressionValueMap.withString(":n",song.getLink());
                     break;
                 case "songName": updateExpressionBuilder.append("songName = :t,");
+                    expressionValueMap.withString(":t", song.getTitle());
                     break;
                 case "likes": updateExpressionBuilder.append("likes = :k,");
+                    expressionValueMap.withInt(":k", song.getLikes());
                     break;
             }
         }
         updateExpressionBuilder.deleteCharAt(updateExpressionBuilder.lastIndexOf(","));
-       return updateExpressionBuilder.toString();
+       return new Pair<String, ValueMap>(updateExpressionBuilder.toString(),expressionValueMap);
     }
 
     /**
