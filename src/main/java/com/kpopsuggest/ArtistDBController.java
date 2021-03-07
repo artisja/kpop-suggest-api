@@ -131,6 +131,7 @@ public class ArtistDBController {
      * @return
      */
     @PutMapping(path = "/Songs/update/{songId}",consumes = "application/json",produces = "application/json")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public ResponseEntity<JSONObject> updateSong(@RequestBody Song song,@PathVariable String songId){
         String resultUpdate = "";
         JSONObject resultJson = null;
@@ -152,7 +153,7 @@ public class ArtistDBController {
         }catch(Exception exception){
             System.err.println(exception.toString());
         }
-        return new ResponseEntity<JSONObject>(resultJson,HttpStatus.FOUND);
+        return new ResponseEntity<JSONObject>(resultJson,HttpStatus.ACCEPTED);
     }
 
     private String buildUpdateExpression(Song song) {
