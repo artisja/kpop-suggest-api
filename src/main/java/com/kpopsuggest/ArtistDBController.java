@@ -183,37 +183,7 @@ public class ArtistDBController {
         updateExpressionBuilder.deleteCharAt(updateExpressionBuilder.lastIndexOf(","));
        return new Pair<String, ValueMap>(updateExpressionBuilder.toString(),expressionValueMap);
     }
-
-    /**
-     *
-     * Get Song
-     *
-     * Will comment out as not needed as of now
-     * @param songName
-     * @return Json
-     */
-//    @GetMapping(value = "/Song/{songName}",produces = "application/json")
-//    @ResponseStatus(HttpStatus.FOUND)
-//    public String getSong(@PathVariable("songName") String songName) {
-//        //check database for song if not there then will need to send to spotify to retrieve
-//        String response = null;
-//        Item songitem = isSongCreated(songName);
-//        if(!songitem.isNull(Constants.SONG_ID.attribute)){
-//            response = songitem.toJSONPretty();
-//           return response;
-//        }else{
-//            Paging<Track> trackPaging = null;
-//            try {
-//                trackPaging = searchSpotifyForSong(songName);
-//                Track song = trackPaging.getItems()[0];
-//                ObjectMapper objectMapper = new ObjectMapper();
-//                response = objectMapper.writeValueAsString(song);
-//            } catch (Exception exception) {
-//                exception.printStackTrace();
-//            }
-//        }
-//        return response;
-//    }
+    
 
 //    private Item isSongCreated(String songName) {
 //       Item songItem = songTable.getItem(new PrimaryKey(Constants.SONG_ID.attribute,songName));
@@ -290,7 +260,10 @@ public class ArtistDBController {
             return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.BAD_REQUEST);
         }
 
-        GetArtistsTopTracksRequest getArtistsTopTracksRequest = spotifyApi.getArtistsTopTracks(artistName, CountryCode.KR).build();
+        //add search for artist to get ID if not in database?
+        Artist artist = artistExecuteRequest(artistName);
+
+        GetArtistsTopTracksRequest getArtistsTopTracksRequest = spotifyApi.getArtistsTopTracks(artist.getId(),CountryCode.US).build();
         Track[] artistTracks = new Track[0];
         try {
             artistTracks = getArtistsTopTracksRequest.execute();
@@ -304,6 +277,7 @@ public class ArtistDBController {
         if(artistTracks.length==0){
             return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.NOT_FOUND);
         }
+        //process artist tracks for less info in Json
         searchResultJson.put("Artist Track Results", artistTracks);
         searchResultJson.put("Status", HttpStatus.FOUND);
         searchResultJson.put("link","/Song/add/" + artistTracks[0]);
