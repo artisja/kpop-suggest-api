@@ -4,7 +4,7 @@ package Model;
  * Created by artisja on 4/11/20.
  */
 public class Suggest {
-    String userId,suggestedToId, artistId,trackLink;;
+    String userId,suggestedToId, artistId,trackLink,songName,comment;
 
     public String getArtistId() {
         return artistId;
@@ -22,6 +22,18 @@ public class Suggest {
         return suggestedToId;
     }
 
+    public String getSongName() {
+        return songName;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setSongName(String songName) {
+        this.songName = songName;
+    }
+
     public void setArtistId(String artistId) {
         this.artistId = artistId;
     }
@@ -36,5 +48,9 @@ public class Suggest {
 
     public void setTrackLink(String trackLink) {
         this.trackLink = trackLink;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }
