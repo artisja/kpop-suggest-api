@@ -4,40 +4,37 @@ package Model;
  * Created by artisja on 4/11/20.
  */
 public class Suggest {
-    String user,name;
-    Song song;
-    Artist artist;
+    String userId,suggestedToId, artistId,trackLink;;
 
-
-    public String getUser() {
-        return user;
+    public String getArtistId() {
+        return artistId;
     }
 
-    public String getName() {
-        return name;
+    public String getTrackLink() {
+        return trackLink;
     }
 
-    public Song getSong() {
-        return song;
+    public String getUserId() {
+        return userId;
     }
 
-    public Artist getArtist() {
-        return artist;
+    public String getSuggestedToId() {
+        return suggestedToId;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setArtistId(String artistId) {
+        this.artistId = artistId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSuggestedToId(String suggestedToId) {
+        this.suggestedToId = suggestedToId;
     }
 
-    public void setSong(Song song) {
-        this.song = song;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public void setArtist(Artist artist) {
-        this.artist = artist;
+    public void setTrackLink(String trackLink) {
+        this.trackLink = trackLink;
     }
 }
