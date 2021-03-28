@@ -127,7 +127,7 @@ public class ArtistDBController {
                                 .withString(Constants.COMMENT.attribute,(suggestion.getComment()==null || suggestion.getComment().isEmpty()) ? Constants.DEFAULT_COMMENT_MESSAGE.attribute:suggestion.getComment())
                 );
     }
-    
+
     private Pair<String, ValueMap> buildUpdateExpression(Song song) {
         StringBuilder updateExpressionBuilder = new StringBuilder();
         ValueMap expressionValueMap = new ValueMap();
@@ -180,50 +180,6 @@ public class ArtistDBController {
         return trackPaging;
     }
 
-    /**
-     * Retrieves song
-     * @param songIDList
-     * @return Json
-     */
-    @GetMapping(path = "/Songs/retrieve",consumes = "application/json",produces = "application/json")
-    @ResponseStatus(HttpStatus.FOUND)
-    public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
-        ObjectMapper songJsonMapper = new ObjectMapper();
-        String songsJson = "";
-        ArrayList<Item> retrievedItems = new ArrayList<Item>();
-        ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        try{
-         songIDList.getSongIDs().stream().forEach(
-                songId -> retrievedItems.add(songTable.getItem("songId",songId))
-         );
-        }catch (Exception exception){
-            return new ResponseEntity<>(
-                    exception.getCause(),
-                    HttpStatus.NOT_FOUND);
-        }
-        SongDBUtil songDBUtil = new SongDBUtil();
-        //may want to add a save for if songID not found
-        for (Item songItem: retrievedItems) {
-            if(songItem!=null){
-                retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
-            }
-        }
-        try {
-            songsJson = songJsonMapper.writeValueAsString(retrievedSongs);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
-        if(retrievedSongs.size()!=songIDList.getSongIDs().size()){
-            return new ResponseEntity<>(
-                    songsJson,
-                    HttpStatus.PARTIAL_CONTENT);
-        }
-
-        return new ResponseEntity<>(
-                songsJson,
-                HttpStatus.FOUND);
-    }
 
     private Track[] searchTopTracks(String artistName) throws Exception{
         Artist artist = artistExecuteRequest(artistName);
