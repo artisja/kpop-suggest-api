@@ -1,13 +1,15 @@
 package Utils;
 
 public enum Constants {
-    SONG_ID("songId"),
-    ARTIST_NAME("artistName"),
-    LENGTH("timeLength"),
-    LIKES("likes"),
-    LINK("link"),
-    NAME("songName"),
-    TABLE("songs_table");
+    TRACK_URL("trackUrl"),
+    ARTIST_ID("artistId"),
+    USER_ID("userId"),
+    SUGGESTION_ID("suggestId"),
+    SUGGESTTO_ID("suggestedToId"),
+    NAME("trackName"),
+    COMMENT("comment"),
+    DEFAULT_COMMENT_MESSAGE("You got a recommended song."),
+    TABLE("suggestions_table");
 
     public final String attribute;
 

@@ -2,19 +2,18 @@ package com.kpopsuggest;
 
 import Model.Song;
 import Model.SongIDWrapper;
+import Model.Suggest;
 import Utils.Constants;
 import Utils.SongDBUtil;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonObject;
 import com.neovisionaries.i18n.CountryCode;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
@@ -28,7 +27,6 @@ import com.wrapper.spotify.requests.data.search.simplified.SearchTracksRequest;
 import javafx.util.Pair;
 import net.minidev.json.JSONObject;
 import org.apache.hc.core5.http.ParseException;
-import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +36,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 import com.wrapper.spotify.SpotifyApi;
 
@@ -83,24 +82,27 @@ public class ArtistDBController {
     }
 
     /**
-     * Adds song
-     * @param songName
-     * @return
+     *
+     * @param suggestion
+     * @return Response entity
      */
-    @PutMapping(path = "/Song/add/{songName}", produces = "application/json")
+    @PutMapping(path = "/Suggestion", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<JSONObject> addSong(@PathVariable("songName") String songName) {
+    public ResponseEntity<JSONObject> addSuggest(@RequestBody Suggest suggestion) {
         Paging<Track>  trackPaging = null;
         try {
-            trackPaging = searchSpotifyForSong(songName);
+            trackPaging = searchSpotifyForSong(suggestion);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
 
         BatchWriteItemOutcome batchWriteItemOutcome = null;
         Track topTrack = trackPaging.getItems()[0];
+        suggestion.setTrackLink(topTrack.getUri());
+        suggestion.setArtistId(topTrack.getArtists()[0].getId());
+
         try {
-            batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToItem(topTrack));
+            batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToSuggest(suggestion));
         } catch (NoSuchAlgorithmException e) {
             JSONObject json = new JSONObject();
             json.put("Result","Duplicate Song");
@@ -108,50 +110,22 @@ public class ArtistDBController {
         }
         JSONObject json = new JSONObject();
         json.put("Result", batchWriteItemOutcome.getBatchWriteItemResult().toString());
-        json.put("link","/Song/"+topTrack.getId());
+        json.put("Link",suggestion.getTrackLink());
         return new ResponseEntity<JSONObject>(json, HttpStatus.CREATED);
     }
 
-    private TableWriteItems convertTrackToItem(Track track) throws NoSuchAlgorithmException{
+    private TableWriteItems convertTrackToSuggest(Suggest suggestion) throws NoSuchAlgorithmException{
         return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
-                                .withPrimaryKey(Constants.SONG_ID.attribute, track.getId())
-                                .withString(Constants.ARTIST_NAME.attribute,track.getArtists()[0].getName())
-                                .withInt(Constants.LENGTH.attribute,track.getDurationMs())
-                                .withInt(Constants.LIKES.attribute, track.getPopularity())
-                                .withString(Constants.LINK.attribute,track.getUri())
-                                .withString(Constants.NAME.attribute, String.valueOf(track.getName()))
+                                .withPrimaryKey(Constants.SUGGESTION_ID.attribute, UUID.randomUUID().toString())
+                                .withString(Constants.USER_ID.attribute,suggestion.getUserId())
+                                .withString(Constants.TRACK_URL.attribute,suggestion.getTrackLink())
+                                .withString(Constants.ARTIST_ID.attribute,suggestion.getArtistId())
+                                .withString(Constants.SUGGESTTO_ID.attribute, suggestion.getSuggestedToId())
+                                .withString(Constants.NAME.attribute,suggestion.getSongName())
+                                .withString(Constants.COMMENT.attribute,(suggestion.getComment()==null || suggestion.getComment().isEmpty()) ? Constants.DEFAULT_COMMENT_MESSAGE.attribute:suggestion.getComment())
                 );
-    }
-
-    /**
-     *
-     * @param song
-     * @param songId
-     * @return
-     */
-    @PutMapping(path = "/Songs/update/{songId}",consumes = "application/json",produces = "application/json")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<JSONObject> updateSong(@RequestBody Song song,@PathVariable String songId){
-        Map<String, Object> resultUpdate = null;
-        JSONObject resultJson = null;
-        Pair<String,ValueMap> expressionUpdatePair = buildUpdateExpression(song);
-
-        UpdateItemSpec updateSongSpec = new UpdateItemSpec().withPrimaryKey("songId",songId)
-                .withUpdateExpression(expressionUpdatePair.getKey())
-                .withValueMap(expressionUpdatePair.getValue())
-                .withReturnValues(ReturnValue.UPDATED_NEW);
-        try{
-            UpdateItemOutcome updateSongOutcome = songTable.updateItem(updateSongSpec);
-            resultUpdate = updateSongOutcome.getItem().asMap();
-            resultJson = new JSONObject(resultUpdate);
-            resultJson.put("link","/Songs/retrieve");
-        }catch(Exception exception){
-            System.err.println(exception);
-            System.err.println(exception.toString());
-        }
-        return new ResponseEntity<JSONObject>(resultJson,HttpStatus.ACCEPTED);
     }
 
     private Pair<String, ValueMap> buildUpdateExpression(Song song) {
@@ -190,8 +164,8 @@ public class ArtistDBController {
 //       return songItem;
 //    }
 
-    private Paging<Track> searchSpotifyForSong(String songName) throws Exception {
-        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(songName + " genre:k-pop").build();
+    private Paging<Track> searchSpotifyForSong(Suggest suggest) throws Exception {
+        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(suggest.getSongName() + " genre:K-pop").build();
         Paging<Track> trackPaging = null;
         try {
             trackPaging = searchTracksRequest.execute();
@@ -206,61 +180,8 @@ public class ArtistDBController {
         return trackPaging;
     }
 
-    /**
-     * Retrieves song
-     * @param songIDList
-     * @return Json
-     */
-    @GetMapping(path = "/Songs/retrieve",consumes = "application/json",produces = "application/json")
-    @ResponseStatus(HttpStatus.FOUND)
-    public ResponseEntity retrieveSongs(@RequestBody SongIDWrapper songIDList){
-        ObjectMapper songJsonMapper = new ObjectMapper();
-        String songsJson = "";
-        ArrayList<Item> retrievedItems = new ArrayList<Item>();
-        ArrayList<Song> retrievedSongs = new ArrayList<Song>();
-        try{
-         songIDList.getSongIDs().stream().forEach(
-                songId -> retrievedItems.add(songTable.getItem("songId",songId))
-         );
-        }catch (Exception exception){
-            return new ResponseEntity<>(
-                    exception.getCause(),
-                    HttpStatus.NOT_FOUND);
-        }
-        SongDBUtil songDBUtil = new SongDBUtil();
-        //may want to add a save for if songID not found
-        for (Item songItem: retrievedItems) {
-            if(songItem!=null){
-                retrievedSongs.add(songDBUtil.transferItem(songItem.attributes().iterator(),new Song()));
-            }
-        }
-        try {
-            songsJson = songJsonMapper.writeValueAsString(retrievedSongs);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
 
-        if(retrievedSongs.size()!=songIDList.getSongIDs().size()){
-            return new ResponseEntity<>(
-                    songsJson,
-                    HttpStatus.PARTIAL_CONTENT);
-        }
-
-        return new ResponseEntity<>(
-                songsJson,
-                HttpStatus.FOUND);
-    }
-
-    @GetMapping(path = "search/artists/{artist}/songs",produces = "application/json")
-    @ResponseStatus(HttpStatus.FOUND)
-    public  ResponseEntity<JSONObject> searchArtistSongs(@PathVariable("artist") String artistName) {
-        JSONObject searchResultJson = new JSONObject();
-        if(isInputInvalid(artistName)){
-            searchResultJson.put("Error Message", "Invalid Artist Name");
-            return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.BAD_REQUEST);
-        }
-
-        //add search for artist to get ID if not in database?
+    private Track[] searchTopTracks(String artistName) throws Exception{
         Artist artist = artistExecuteRequest(artistName);
 
         GetArtistsTopTracksRequest getArtistsTopTracksRequest = spotifyApi.getArtistsTopTracks(artist.getId(),CountryCode.US).build();
@@ -274,6 +195,25 @@ public class ArtistDBController {
         } catch (ParseException parseException) {
             parseException.printStackTrace();
         }
+        return artistTracks;
+    }
+
+    @GetMapping(path = "search/artists/{artist}/songs",produces = "application/json")
+    @ResponseStatus(HttpStatus.FOUND)
+    public  ResponseEntity<JSONObject> searchArtistSongs(@PathVariable("artist") String artistName) {
+        JSONObject searchResultJson = new JSONObject();
+        if(isInputInvalid(artistName)){
+            searchResultJson.put("Error Message", "Invalid Artist Name");
+            return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.BAD_REQUEST);
+        }
+
+        Track [] artistTracks = new Track[0];
+        try {
+            artistTracks = searchTopTracks(artistName);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+
         if(artistTracks.length==0){
             return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.NOT_FOUND);
         }
