@@ -9,6 +9,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
@@ -35,15 +36,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import com.wrapper.spotify.SpotifyApi;
 
 import javax.annotation.PostConstruct;
+import javax.ws.rs.PathParam;
 
 @RestController
 public class ArtistDBController {
@@ -76,13 +75,46 @@ public class ArtistDBController {
             .withRegion(Regions.US_EAST_1)
             .build();
     private DynamoDB dynamoDB = new DynamoDB(client);
-    private final Table songTable = dynamoDB.getTable(Constants.TABLE.attribute);
-
+    private final Table suggestTable = dynamoDB.getTable(Constants.TABLE.attribute);
+    private final Index index = suggestTable.getIndex("suggestedToId-index");
 
     @GetMapping("/RedVelvet")
     public String redVelvetTest(@RequestParam(value = "song", defaultValue = "Happiness") String song) {
         return String.format("Hello %s!", song);
     }
+
+    @GetMapping(path = "/Suggestion/{userId}")
+    public ResponseEntity<JSONObject> getUserSuggests(@PathVariable("userId") String userId) {
+        ResponseEntity<JSONObject> response = null;
+        JSONObject returnJson = new JSONObject();
+        if(isInputInvalid(userId)) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("User Credentials Issue", "Invalid User: " + userId);
+            response = new ResponseEntity<JSONObject>(jsonObject,HttpStatus.NOT_ACCEPTABLE);
+            return response;
+        }
+        try{
+            //dynamo db search call
+            QuerySpec suggestQuerySpec = new QuerySpec()
+                    .withKeyConditionExpression("suggestedToId = :s_id")
+                    .withValueMap(new ValueMap()
+                            .withString(":s_id", userId));
+            suggestQuerySpec.setMaxResultSize(10);
+            ItemCollection<QueryOutcome> suggestQueryItems = index.query(suggestQuerySpec);
+
+            //add sqs queue to publish to pull down in refresh?
+            List<String> suggestList = new ArrayList<String>();
+            suggestQueryItems.firstPage().iterator().forEachRemaining(suggestion -> suggestList.add(suggestion.toJSON()));
+            returnJson.put("Results", suggestList);
+        }catch (Exception exception){
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("Amazon Dynamo DB Issue: ",exception.getMessage());
+            return new ResponseEntity<JSONObject>(jsonObject,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        response = new ResponseEntity<>(returnJson,HttpStatus.ACCEPTED);
+        return response;
+    }
+
 
     /**
      *
@@ -97,6 +129,9 @@ public class ArtistDBController {
             trackPaging = searchSpotifyForSong(suggestion);
         } catch (Exception exception) {
             exception.printStackTrace();
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("Spotify API Issue",exception.getMessage());
+            return new ResponseEntity<JSONObject>(jsonObject,HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         BatchWriteItemOutcome batchWriteItemOutcome = null;
@@ -106,6 +141,7 @@ public class ArtistDBController {
         ArrayList<String> artistList = new ArrayList<String>();
         artistSimplifiedStream.forEach(artist -> artistList.add(artist.getId()));
         suggestion.setArtistId(artistList);
+
         try {
             batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToSuggest(suggestion));
         } catch (NoSuchAlgorithmException e) {
