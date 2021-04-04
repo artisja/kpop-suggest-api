@@ -18,6 +18,7 @@ import com.neovisionaries.i18n.CountryCode;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
 import com.wrapper.spotify.model_objects.specification.Artist;
+import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
 import com.wrapper.spotify.model_objects.specification.Paging;
 import com.wrapper.spotify.model_objects.specification.Track;
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
@@ -35,8 +36,10 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import com.wrapper.spotify.SpotifyApi;
 
@@ -99,8 +102,10 @@ public class ArtistDBController {
         BatchWriteItemOutcome batchWriteItemOutcome = null;
         Track topTrack = trackPaging.getItems()[0];
         suggestion.setTrackLink(topTrack.getUri());
-        suggestion.setArtistId(topTrack.getArtists()[0].getId());
-
+        Stream<ArtistSimplified> artistSimplifiedStream = Arrays.stream(topTrack.getArtists());
+        ArrayList<String> artistList = new ArrayList<String>();
+        artistSimplifiedStream.forEach(artist -> artistList.add(artist.getId()));
+        suggestion.setArtistId(artistList);
         try {
             batchWriteItemOutcome = dynamoDB.batchWriteItem(convertTrackToSuggest(suggestion));
         } catch (NoSuchAlgorithmException e) {
@@ -121,7 +126,7 @@ public class ArtistDBController {
                                 .withPrimaryKey(Constants.SUGGESTION_ID.attribute, UUID.randomUUID().toString())
                                 .withString(Constants.USER_ID.attribute,suggestion.getUserId())
                                 .withString(Constants.TRACK_URL.attribute,suggestion.getTrackLink())
-                                .withString(Constants.ARTIST_ID.attribute,suggestion.getArtistId())
+                                .withList(Constants.ARTIST_ID.attribute,suggestion.getArtistIds())
                                 .withString(Constants.SUGGESTTO_ID.attribute, suggestion.getSuggestedToId())
                                 .withString(Constants.NAME.attribute,suggestion.getSongName())
                                 .withString(Constants.COMMENT.attribute,(suggestion.getComment()==null || suggestion.getComment().isEmpty()) ? Constants.DEFAULT_COMMENT_MESSAGE.attribute:suggestion.getComment())

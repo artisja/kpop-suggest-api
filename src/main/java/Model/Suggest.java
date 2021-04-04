@@ -1,13 +1,18 @@
 package Model;
 
+import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
+
+import java.util.ArrayList;
+
 /**
  * Created by artisja on 4/11/20.
  */
 public class Suggest {
-    String userId,suggestedToId, artistId,trackLink,songName,comment;
+    String userId,suggestedToId ,trackLink,songName,comment;
+    ArrayList<String> artistIds;
 
-    public String getArtistId() {
-        return artistId;
+    public ArrayList<String> getArtistIds() {
+        return artistIds;
     }
 
     public String getTrackLink() {
@@ -34,8 +39,8 @@ public class Suggest {
         this.songName = songName;
     }
 
-    public void setArtistId(String artistId) {
-        this.artistId = artistId;
+    public void setArtistId(ArrayList<String> artistIds) {
+        this.artistIds = artistIds;
     }
 
     public void setSuggestedToId(String suggestedToId) {
