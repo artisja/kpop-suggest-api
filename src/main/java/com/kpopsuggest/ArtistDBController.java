@@ -155,7 +155,7 @@ public class ArtistDBController {
         return new ResponseEntity<JSONObject>(json, HttpStatus.CREATED);
     }
 
-    private TableWriteItems convertTrackToSuggest(Suggest suggestion) throws NoSuchAlgorithmException{
+    private TableWriteItems convertTrackToSuggest(Suggest suggestion) throws NoSuchAlgorithmException {
         return new TableWriteItems(Constants.TABLE.attribute)
                 .withItemsToPut(
                         new Item()
@@ -206,7 +206,7 @@ public class ArtistDBController {
 //    }
 
     private Paging<Track> searchSpotifyForSong(Suggest suggest) throws Exception {
-        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(suggest.getSongName() + " genre:K-pop").build();
+        SearchTracksRequest searchTracksRequest = spotifyApi.searchTracks(suggest.getSongName() + Constants.SEARCH_KEY.attribute).build();
         Paging<Track> trackPaging = null;
         try {
             trackPaging = searchTracksRequest.execute();
@@ -222,7 +222,7 @@ public class ArtistDBController {
     }
 
 
-    private Track[] searchTopTracks(String artistName) throws Exception{
+    private Track[] searchTopTracks(String artistName) throws Exception {
         Artist artist = artistExecuteRequest(artistName);
 
         GetArtistsTopTracksRequest getArtistsTopTracksRequest = spotifyApi.getArtistsTopTracks(artist.getId(),CountryCode.US).build();
@@ -258,10 +258,11 @@ public class ArtistDBController {
         if(artistTracks.length==0){
             return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.NOT_FOUND);
         }
+
         //process artist tracks for less info in Json
         searchResultJson.put("Artist Track Results", artistTracks);
         searchResultJson.put("Status", HttpStatus.FOUND);
-        searchResultJson.put("link","/Song/add/" + artistTracks[0]);
+        searchResultJson.put("link","/Suggestion" );
         return new ResponseEntity<JSONObject>(searchResultJson, HttpStatus.FOUND);
     }
 

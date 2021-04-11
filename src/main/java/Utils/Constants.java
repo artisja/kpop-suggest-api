@@ -9,6 +9,7 @@ public enum Constants {
     NAME("trackName"),
     COMMENT("comment"),
     DEFAULT_COMMENT_MESSAGE("You got a recommended song."),
+    SEARCH_KEY(" genre:k-pop"),
     TABLE("suggestions_table");
 
     public final String attribute;
