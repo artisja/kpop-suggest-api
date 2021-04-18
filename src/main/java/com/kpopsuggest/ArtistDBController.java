@@ -1,5 +1,6 @@
 package com.kpopsuggest;
 
+import Model.Playlist;
 import Model.Song;
 import Model.SongIDWrapper;
 import Model.Suggest;
@@ -16,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neovisionaries.i18n.CountryCode;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
 import com.wrapper.spotify.model_objects.specification.Artist;
@@ -24,6 +26,7 @@ import com.wrapper.spotify.model_objects.specification.Paging;
 import com.wrapper.spotify.model_objects.specification.Track;
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
 import com.wrapper.spotify.requests.data.artists.GetArtistsTopTracksRequest;
+import com.wrapper.spotify.requests.data.playlists.CreatePlaylistRequest;
 import com.wrapper.spotify.requests.data.search.simplified.SearchArtistsRequest;
 import com.wrapper.spotify.requests.data.search.simplified.SearchTracksRequest;
 import javafx.util.Pair;
@@ -221,6 +224,20 @@ public class ArtistDBController {
         return trackPaging;
     }
 
+    @PostMapping(path = "/playlist/{playlistName}", produces = "application/json")
+    public ResponseEntity<JSONObject> createPlaylist(@PathParam("playlistName") String playlistName, @RequestBody Playlist playlist) {
+        return new ResponseEntity<JSONObject>(HttpStatus.ACCEPTED);
+    }
+
+    private String createPlaylistURL(String userId,String suggestToId,String playlistName) {
+        String playlistURL = "";
+        CreatePlaylistRequest createPlaylistRequest = spotifyApi.createPlaylist(userId, name)
+          .collaborative(true)
+          .public_(false)
+          .description("Amazing music.").build();
+
+        return playlistURL;
+    }
 
     private Track[] searchTopTracks(String artistName) throws Exception {
         Artist artist = artistExecuteRequest(artistName);
