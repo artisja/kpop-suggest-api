@@ -226,7 +226,7 @@ public class ArtistDBController {
 
     @PostMapping(path = "/playlist/{playlistName}", produces = "application/json")
     public ResponseEntity<JSONObject> createPlaylist(@PathParam("playlistName") String playlistName, @RequestBody Playlist playlist) {
-        return new ResponseEntity<JSONObject>();
+        return new ResponseEntity<JSONObject>(HttpStatus.ACCEPTED);
     }
 
     private String createPlaylistURL(String userId,String suggestToId,String playlistName) {
