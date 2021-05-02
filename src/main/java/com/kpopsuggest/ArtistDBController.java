@@ -86,13 +86,13 @@ public class ArtistDBController {
         return String.format("Hello %s!", song);
     }
 
-    @GetMapping(path = "/Suggestion/{userId}")
-    public ResponseEntity<JSONObject> getUserSuggests(@PathVariable("userId") String userId) {
+    @GetMapping(path = "/Suggestion/{suggestedToId}")
+    public ResponseEntity<JSONObject> getUserSuggests(@PathVariable("suggestedToId") String suggestedToId) {
         ResponseEntity<JSONObject> response = null;
         JSONObject returnJson = new JSONObject();
-        if(isInputInvalid(userId)) {
+        if(isInputInvalid(suggestedToId)) {
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("User Credentials Issue", "Invalid User: " + userId);
+            jsonObject.put("User Credentials Issue", "Invalid User: " + suggestedToId);
             response = new ResponseEntity<JSONObject>(jsonObject,HttpStatus.NOT_ACCEPTABLE);
             return response;
         }
@@ -101,14 +101,22 @@ public class ArtistDBController {
             QuerySpec suggestQuerySpec = new QuerySpec()
                     .withKeyConditionExpression("suggestedToId = :s_id")
                     .withValueMap(new ValueMap()
-                            .withString(":s_id", userId));
-            suggestQuerySpec.setMaxResultSize(10);
+                            .withString(":s_id", suggestedToId));
+            suggestQuerySpec.setMaxResultSize(2);
             ItemCollection<QueryOutcome> suggestQueryItems = index.query(suggestQuerySpec);
-
-            //add sqs queue to publish to pull down in refresh?
+            System.out.println(suggestQueryItems.firstPage().toString());
+//            //add sqs queue to publish to pull down in refresh?
             List<String> suggestList = new ArrayList<String>();
-            suggestQueryItems.firstPage().iterator().forEachRemaining(suggestion -> suggestList.add(suggestion.toJSON()));
-            returnJson.put("Results", suggestList);
+            suggestQueryItems.firstPage();
+            suggestQueryItems.iterator().next().toString();
+            Iterator<Item> itemIterator = suggestQueryItems.iterator();
+            while (itemIterator.hasNext()) {
+                Item nextItem = itemIterator.next();
+                suggestList.add(nextItem.toJSONPretty().toString());
+            }
+            returnJson.put("Results", suggestList.toString());
+            System.out.println(suggestQueryItems.getLastLowLevelResult().getItems().get(0));
+            returnJson.put("LastItem",suggestQueryItems.getLastLowLevelResult().getItems().get(0).get("LastEvaluatedKey"));
         }catch (Exception exception){
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("Amazon Dynamo DB Issue: ",exception.getMessage());
@@ -231,7 +239,7 @@ public class ArtistDBController {
 
     private String createPlaylistURL(String userId,String suggestToId,String playlistName) {
         String playlistURL = "";
-        CreatePlaylistRequest createPlaylistRequest = spotifyApi.createPlaylist(userId, name)
+        CreatePlaylistRequest createPlaylistRequest = spotifyApi.createPlaylist(userId, playlistName)
           .collaborative(true)
           .public_(false)
           .description("Amazing music.").build();
